@@ -1,0 +1,24 @@
+{
+  "name": "rbxchance-com",
+  "version": "2.0.0",
+  "description": "A newly redefined gambling experience!",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "api": "npm start -prefix server",
+    "client": "npm start -prefix client",
+    "build": "sh ./scripts/build-local.sh",
+    "deploy": "sh ./scripts/deploy-local.sh",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "gambling",
+    "crypto"
+  ],
+  "author": "rbxchance",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "moment": "^2.29.4",
+    "zip": "^1.2.0"
+  }
+}

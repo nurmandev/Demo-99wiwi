@@ -1,0 +1,253 @@
+Installation: 
+
+Need:
+- Ubuntu 20.04 Server, 3-5GB RAM
+- Domain
+- Cloudflare Account
+- Gmail Account
+- Coinbase Account
+- Steam Account
+- SkinsBack Merchant Account
+
+Next: 
+Replace in all folders provided, also rename the folders rbxchancecom-admin and rbxchance-com-master and the api files to fit with your domain:
+- rbxchance.com with yourdomain.com
+- rbxchance-com with yourdomain-com
+- rbxchancecom with yourdomaincom
+- rbxchance with yourdomain
+
+Next open Putty Software:
+Need to install on server first:
+1. nginx:
+sudo apt install nginx
+
+2. mongodb:
+sudo apt update
+sudo apt install -y mongodb
+sudo systemctl status mongodb
+
+3. nodejs:
+sudo apt install nodejs
+sudo apt install npm
+
+----------------------------------------------
+
+Next:
+Cloudflare: DNS records - (all are A records to IP)
+A record to Server IP
+Next records (all are A records to IP):
+yourdomain.com to Server IP
+api.yourdomain.com to Server IP
+admin.yourdomain.com to Server IP
+
+Next: Add Cloudflare Nameservers to Domain on your domain provider
+Next: Add Cloudflare Settings: Mode: Flexible, Always use HTTPS
+
+----------------------------------------------
+
+Next:
+Connect to Server via FileZilla or other software
+create apps folder in /
+so it will look like /apps
+Next step use just the domain name without the .com ending to create the folders.
+in apps folder create folder: domain-com
+in apps folder create folder: domain-admin
+in domain-admin folder create folder: build
+
+----------------------------------------------
+
+Next:
+3 API files: 
+admin.yourdomain.com
+api.yourdomain.com
+yourdomain.com
+
+Copy these into /etc/nginx/sites-available
+delete default file. (also delete from sites-enabled)
+
+And then in the command line of the vps (Putty Software):
+sudo ln -s /etc/nginx/sites-available/rbxchance.com /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/api.rbxchance.com /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/admin.rbxchance.com /etc/nginx/sites-enabled/
+sudo systemctl restart nginx
+
+sudo ufw allow 'Nginx HTTP'
+
+----------------------------------------------
+
+Next:
+On rbxchance-com-master folder:
+server\src\config 
+edit index.js
+
+Next: Create Steam Account put 5€ on it
+
+Next: In index.js config file:
+create steam api key from https://steamcommunity.com/dev/apikey
+Place that at the end of the file into steam.apiKey ( you can check the current config file how it looks like)
+
+----------------------------------------------
+
+Next:
+Coinbase: https://www.coinbase.com/settings/api
+API Settings
+
+do the API and select:
+BTC, ETH, LTC
+
+Select:
+wallet: accounts: read
+wallet: addresses: create
+wallet: transactions: request
+wallet: transactions: transfer
+wallet: addresses: read
+wallet: notifications: read
+wallet: transactions: send
+
+Notification url:
+https://api.yourdomain.com/api/callback/coinbase
+
+IP-Restriction: SERVER IP
+
+-> Once you done all that you will get a screen with api secret and api key. copy them and save them.
+
+----------------------------------------------
+
+Twillo: not used anymore, was used for phone verification
+
+----------------------------------------------
+
+Skinsback: need to go to the skinsback site and ask via support to make a merchant account for your domain, once you got it you add in config file these:
+    skinsback: {
+      shop_id: "HERE",
+      secret_key: "HERE",
+    },
+
+----------------------------------------------
+
+Next:
+Google reCaptcha:
+https://www.google.com/recaptcha/admin/create
+Label yourdomain
+Version 2
+Domain yourdomain.com
+
+In index.js config file:
+    reCaptcha: {
+      secretKey: "<YOUR SECRET KEY>",
+    },
+
+Then open client\src\services\api.service.js
+And replace REPLACE_RECAPTCHA_SITE_KEY with the your siteKEY
+
+
+For authentication.jwtSecret dont change it leave it as it is. needs to be 50 characters length.
+
+---------------------------------------------------------------------------------------------------
+
+For the google oauth go here https://console.developers.google.com/
+New Project
+Then oauth consent screen
+External
+Next: Fill out, also Scopes / Areas select all:
+	.../auth/userinfo.email		
+.../auth/userinfo.profile		
+openid
+
+Next: Domain verification, Alternative Methods, Cloudflare put in DNS
+
+Next: Credentials, +Create Credentials, Oauth client ID:
+Web Application
+- yourdomain
+Authorized forwarding URIs: https://api.yourdomain.com/api/auth/google/callback
+
+In index.js config file put the clientId and clientSecret:
+    googleOauth: {
+      clientId: "HERE",
+      clientSecret: "HERE",
+    },
+
+
+---------------------------------------------------------------------------------------------------
+
+Next:
+Go into scripts and open deploy-local
+And replace REPLACE_VPS_IP with your vps IP 3x times
+Then u go into client/src and create a new file called metadata.json and the content is {"build":"domain-frontend@1"}
+
+Then upload deploy-remote.sh from the scripts folder to your vps /root directory
+do "npm i nodemon pm2 -g" at the vps command line (putty program)
+----------------------------------------------
+
+Next:
+VPS console (putty program):
+sudo apt-get install unzip
+
+----------------------------------------------
+
+Next:
+if you got windows install ubuntu via microsoft store and also windows terminal after via microsoft store so you have the ubuntu terminal:
+
+After install node js on your local ubuntu (NOT ON VPS, here we are talking Ubuntu local on your PC)
+
+if you got linux / ubuntu on your pc open ubuntu console: (Local on your pc via ubuntu)
+go to:
+cd rbxchance-com-master
+cd client
+npm install
+cd ../server
+npm install
+
+Next:
+cd rbxchance-com-master
+npm run build <- this command you do always when you change something on the site source 
+
+when finished do:
+npm run deploy <- this command you do always when you want to upload the new source to the vps/server
+yes
+password from VPS <- after deploy you always need to type password 2 times you will see ...
+
+----------------------------------------------
+
+if npm install is not working on deploy: (npm / node versions local need to be same version as on server)
+if they not the same versions: upload node_modules from local to the server manually, this will fix it.
+
+----------------------------------------------
+
+when finished start backend:
+VPS console: (putty program)
+cd /apps/yourdomain-com/src
+
+this stops:
+NODE_ENV=production pm2 stop index.js
+
+this starts:
+NODE_ENV=production pm2 start index.js
+
+Then to check for errors or live console do "pm2 log 0 --lines 200"
+
+----------------------------------------------
+
+Next:
+Admin Panel:
+Open Ubuntu console: (local on your pc)
+cd yourdomain-admin
+npm install
+npm run build <- this command you do always when you change something
+go into the "dist" folder
+delete both .map folders/files inside /js, they get always created on npm run build, you will have always to go inside and delete them.
+
+upload everything what is inside the "dist" folder to /apps/yourdomain-admin/build via filezilla
+
+thats it ... 
+https://admin.yourdomain.com/
+
+----------------------------------------------
+
+Edit via Database:
+https://www.mongodb.com/try/download/compass
+New Connection
+Fill in connection fields individually
+SSL Tunel - Use Password
+SSH Hostname - VPS IP
+27017 Port
